@@ -35,6 +35,7 @@ namespace AutoFill
         private BankAccountDetailsDto bankLogin;
 
         private int selectedAccount = 0;
+        private string selectedBank = "";
 
         //filter fields
         private string remittanceStatusID;        
@@ -54,8 +55,9 @@ namespace AutoFill
             svc = new service();
 
             LoadBankAccountList();
-            LoadRemitance();
-            
+            //  LoadRemitance();
+            LoadRemittanceStatus();
+
              progressbar1.Visibility = Visibility.Hidden;
             TracesProgressbar.Visibility = Visibility.Hidden;
         }
@@ -64,25 +66,35 @@ namespace AutoFill
             accountddl.ItemsSource = accountList;
             accountddl.DisplayMemberPath = "UserName";
             accountddl.SelectedValuePath = "AccountId";
+
+            List<BankList> banks =new List<BankList>() { new BankList() {BankID=1,BankName="ICICI" }, new BankList() { BankID = 2, BankName = "HDFC" } };
+            bankddl.ItemsSource = banks;
+            bankddl.DisplayMemberPath = "BankName";
+            bankddl.SelectedValuePath = "BankName";
+            bankddl.SelectedIndex = 0;
         }
 
         private void LoadRemitance() {
             IList<TdsRemittanceDto> remitanceList = svc.GetTdsRemitance("","","","","","");
+            remitanceList = remitanceList.OrderBy(x => x.UnitNo).ToList();
             remitanceGrid.ItemsSource = remitanceList;
-            remittanceStatusList = svc.GetTdsRemitanceStatus();
-            var emptyObj = new RemittanceStatus() { RemittanceStatusText = "", RemittanceStatusID = -1 };
-            remittanceStatusList.Insert(0, emptyObj);            
-
-            tracesRemitanceStatusddl.ItemsSource = remittanceStatusList;
-            tracesRemitanceStatusddl.DisplayMemberPath = "RemittanceStatusText";
-            tracesRemitanceStatusddl.SelectedValuePath = "RemittanceStatusID";
+          
 
             TotalRecordsLbl.Content = remitanceList.Count;
             var totalTds = remitanceList.Sum(x => x.TdsAmount);
             TotalTDSLbl.Content = totalTds;
 
         }
+        private void LoadRemittanceStatus()
+        {
+            remittanceStatusList = svc.GetTdsRemitanceStatus();
+            var emptyObj = new RemittanceStatus() { RemittanceStatusText = "", RemittanceStatusID = -1 };
+            remittanceStatusList.Insert(0, emptyObj);
 
+            tracesRemitanceStatusddl.ItemsSource = remittanceStatusList;
+            tracesRemitanceStatusddl.DisplayMemberPath = "RemittanceStatusText";
+            tracesRemitanceStatusddl.SelectedValuePath = "RemittanceStatusID";
+        }
         private bool AutoFillForm26Q(int clientPaymentTransactionID) {
             AutoFillDto autoFillDto = svc.GetAutoFillData(clientPaymentTransactionID);
             if (autoFillDto == null)
@@ -97,7 +109,7 @@ namespace AutoFill
             }
            
          
-           var status= FillForm26Q.AutoFillForm26QB(autoFillDto,tds, tdsInterest, lateFee, bankLogin, clientPaymentTransactionID.ToString());
+           var status= FillForm26Q.AutoFillForm26QB(autoFillDto,tds, tdsInterest, lateFee, bankLogin, clientPaymentTransactionID.ToString(),selectedBank);
             return status;
         }
 
@@ -123,7 +135,7 @@ namespace AutoFill
                     return;
 
                 // auto upload
-                autoUploadChallan(model.ClientPaymentTransactionID, challanAmount);
+                autoUploadChallan(model.ClientPaymentTransactionID, challanAmount,selectedBank,model.SellerPAN);
 
                 // Reload filter
                 this.Dispatcher.Invoke((Action)(() =>
@@ -134,7 +146,8 @@ namespace AutoFill
                     var lot = lotNoTxt.Text;
                     var fromUnit = fromUnitNoTxt.Text;
                     var toUnit = toUnitNoTxt.Text;
-                    var remitanceList= svc.GetTdsRemitance(custName, premise, unit, fromUnit, toUnit, lot); 
+                    var remitanceList= svc.GetTdsRemitance(custName, premise, unit, fromUnit, toUnit, lot);
+                    remitanceList = remitanceList.OrderBy(x => x.UnitNo).ToList();
                     remitanceGrid.ItemsSource = remitanceList;
                     TotalRecordsLbl.Content = remitanceList.Count;
                     var totalTds = remitanceList.Sum(x => x.TdsAmount);
@@ -179,7 +192,7 @@ namespace AutoFill
                         continue;
                     }
 
-                    var status = FillForm26Q.AutoFillForm26QB_NoMsg(autoFillDto, item.TdsAmount.ToString(), item.TdsInterest.ToString(), item.LateFee.ToString(), bankLogin, id.ToString());
+                    var status = FillForm26Q.AutoFillForm26QB_NoMsg(autoFillDto, item.TdsAmount.ToString(), item.TdsInterest.ToString(), item.LateFee.ToString(), bankLogin, id.ToString(),selectedBank);
                     if (!status)
                     {
                         if (failedPayments == "")
@@ -192,7 +205,7 @@ namespace AutoFill
                         continue;
                     }
 
-                    autoUploadChallan_NoMsg(id, challanAmount);                   
+                    autoUploadChallan_NoMsg(id, challanAmount,selectedBank,item.SellerPAN);                   
                 }
 
 
@@ -222,15 +235,21 @@ namespace AutoFill
         }
 
 
-        private async void autoUploadChallan(int transID, decimal challanAmt)
+        private async void autoUploadChallan(int transID, decimal challanAmt,string bankName, string sellerPan)
         {
             var remittance = svc.GetRemitanceByTransID(transID);
 
             var downloadPath = Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders", "{374DE290-123F-4565-9164-39C4925E467B}", String.Empty).ToString();
-          //  string[] filePaths = Directory.GetFiles(downloadPath, remittance.CustomerPAN + "_*.pdf").OrderByDescending(f=>f.LastWriteTime);
+            //  string[] filePaths = Directory.GetFiles(downloadPath, remittance.CustomerPAN + "_*.pdf").OrderByDescending(f=>f.LastWriteTime);
+
+            var fileName = "";
+            if (bankName == "HDFC")
+                fileName = "*_*.pdf";
+            else
+                fileName = remittance.CustomerPAN + "_*.pdf";
 
             var directory = new DirectoryInfo(downloadPath);
-            var myFile = directory.GetFiles(remittance.CustomerPAN + "_*.pdf").OrderByDescending(f => f.LastWriteTime).ToList();
+            var myFile = directory.GetFiles(fileName).OrderByDescending(f => f.LastWriteTime).ToList();
 
             if (myFile.Count == 0)
                 return;
@@ -238,7 +257,14 @@ namespace AutoFill
             var filename = myFile[0].FullName;           
 
             var unzipFile = new UnzipFile();
-            var challanDet = unzipFile.getChallanDetails(filename, remittance.CustomerPAN);
+            Dictionary<string, string> challanDet;
+            if (bankName == "HDFC")
+            {
+                challanDet = unzipFile.getChallanDetails_Hdfc(filename, sellerPan);
+            }
+            else
+                challanDet = unzipFile.getChallanDetails(filename, remittance.CustomerPAN);
+
             if (challanDet.Count == 0)
             {
                 MessageBox.Show("PAN is not matched with uploaded file");
@@ -251,7 +277,10 @@ namespace AutoFill
             remittance.ChallanAmount = challanAmt;
             remittance.ChallanID = challanDet["serialNo"];
             remittance.ChallanAckNo = challanDet["acknowledge"];
-            remittance.ChallanDate = DateTime.ParseExact(challanDet["tenderDate"], "ddMMyy", null);
+            if (bankName == "HDFC")
+                remittance.ChallanDate = DateTime.ParseExact(challanDet["tenderDate"], "dd/MM/yyyy", null);
+            else
+                remittance.ChallanDate = DateTime.ParseExact(challanDet["tenderDate"], "ddMMyy", null);
             remittance.RemittanceStatusID = 2;
 
             remittance.ChallanIncomeTaxAmount = Convert.ToDecimal(challanDet["incomeTax"]);
@@ -259,9 +288,9 @@ namespace AutoFill
             remittance.ChallanFeeAmount = Convert.ToDecimal(challanDet["fee"]);
             remittance.ChallanCustomerName = challanDet["name"].ToString();
 
-            var challanAmount = Convert.ToDecimal(challanDet["challanAmount"]);
-            if (challanAmount != challanAmt)
-                MessageBox.Show("Challan Amount is not matching");
+            //var challanAmount = Convert.ToDecimal(challanDet["challanAmount"]);
+            //if (challanAmount != challanAmt)
+            //    MessageBox.Show("Challan Amount is not matching");
 
             var formData = new MultipartFormDataContent();
             var fileContent = new ByteArrayContent(File.ReadAllBytes(filename));
@@ -283,15 +312,20 @@ namespace AutoFill
                 MessageBox.Show("Challan details are not saved ");
         }
 
-        private async void autoUploadChallan_NoMsg(int transID, decimal challanAmt)
+        private async void autoUploadChallan_NoMsg(int transID, decimal challanAmt,string bankName,string sellerPan)
         {
             var remittance = svc.GetRemitanceByTransID(transID);
 
             var downloadPath = Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders", "{374DE290-123F-4565-9164-39C4925E467B}", String.Empty).ToString();
             //  string[] filePaths = Directory.GetFiles(downloadPath, remittance.CustomerPAN + "_*.pdf").OrderByDescending(f=>f.LastWriteTime);
 
+            var fileName = "";
+            if (bankName == "HDFC")
+                fileName = "*_*.pdf";
+            else
+                fileName = remittance.CustomerPAN + "_*.pdf";
             var directory = new DirectoryInfo(downloadPath);
-            var myFile = directory.GetFiles(remittance.CustomerPAN + "_*.pdf").OrderByDescending(f => f.LastWriteTime).ToList();
+            var myFile = directory.GetFiles(fileName).OrderByDescending(f => f.LastWriteTime).ToList();
 
             if (myFile.Count == 0)
                 return;
@@ -299,7 +333,14 @@ namespace AutoFill
             var filename = myFile[0].FullName;
 
             var unzipFile = new UnzipFile();
-            var challanDet = unzipFile.getChallanDetails(filename, remittance.CustomerPAN);
+            Dictionary<string, string> challanDet;
+            if (bankName == "HDFC")
+            {               
+                challanDet = unzipFile.getChallanDetails_Hdfc(filename, sellerPan);
+            }
+            else
+                challanDet = unzipFile.getChallanDetails(filename, remittance.CustomerPAN);
+
             if (challanDet.Count == 0)
                 return;
 
@@ -309,7 +350,10 @@ namespace AutoFill
             remittance.ChallanAmount = challanAmt;
             remittance.ChallanID = challanDet["serialNo"];
             remittance.ChallanAckNo = challanDet["acknowledge"];
-            remittance.ChallanDate = DateTime.ParseExact(challanDet["tenderDate"], "ddMMyy", null);
+            if (bankName == "HDFC")
+                remittance.ChallanDate = DateTime.ParseExact(challanDet["tenderDate"], "dd/MM/yyyy", null);
+            else
+                remittance.ChallanDate = DateTime.ParseExact(challanDet["tenderDate"], "ddMMyy", null);
             remittance.RemittanceStatusID = 2;
 
             remittance.ChallanIncomeTaxAmount = Convert.ToDecimal(challanDet["incomeTax"]);
@@ -317,9 +361,9 @@ namespace AutoFill
             remittance.ChallanFeeAmount = Convert.ToDecimal(challanDet["fee"]);
             remittance.ChallanCustomerName = challanDet["name"].ToString();
 
-            var challanAmount = Convert.ToDecimal(challanDet["challanAmount"]);
-            if (challanAmount != challanAmt)
-                MessageBox.Show("Challan Amount is not matching");
+            //var challanAmount = Convert.ToDecimal(challanDet["challanAmount"]);
+            //if (challanAmount != challanAmt)
+            //    MessageBox.Show("Challan Amount is not matching");
 
             var formData = new MultipartFormDataContent();
             var fileContent = new ByteArrayContent(File.ReadAllBytes(filename));
@@ -396,12 +440,18 @@ namespace AutoFill
 
         private void Reset_Click(object sender, RoutedEventArgs e)
         {
+            //UnzipFile file = new UnzipFile();
+            //file.getChallanDetails_Hdfc("", "AAECP7361E");
             customerNameTxt.Text = "";
             PremisesTxt.Text = "";
             unitNoTxt.Text = "";
             lotNoTxt.Text = "";
             fromUnitNoTxt.Text = "";
             toUnitNoTxt.Text = "";
+
+            remitanceGrid.ItemsSource = null;
+            TotalRecordsLbl.Content = 0;
+            TotalTDSLbl.Content = 0;
         }
         private void RemittanceSearchFilter()
         {
@@ -412,8 +462,29 @@ namespace AutoFill
             var fromUnit = fromUnitNoTxt.Text;
             var toUnit = toUnitNoTxt.Text;
 
+            if (!ValidateRequiredFields())
+            {
+                MessageBox.Show("Please fill the mandatory fields");
+                return;
+            }
+
             RemittanceSearchTask(custName, premise, unit,fromUnit,toUnit, lot);
 
+        }
+
+        private bool ValidateRequiredFields()
+        {
+            var premise = PremisesTxt.Text;
+            var unit = unitNoTxt.Text;
+            var lot = lotNoTxt.Text;
+            var fromUnit = fromUnitNoTxt.Text;
+            var toUnit = toUnitNoTxt.Text;
+            if (string.IsNullOrEmpty(premise) || string.IsNullOrEmpty(lot))
+                return false;
+            else if (string.IsNullOrEmpty(unit) && (string.IsNullOrEmpty(fromUnit) || string.IsNullOrEmpty(toUnit)))
+                return false;
+            else
+                return true;
         }
 
         private async void RemittanceSearchTask(string custName, string premise, string unit,string fromUnit,string toUnit, string lot)
@@ -422,6 +493,7 @@ namespace AutoFill
             var remittanceList= await Task.Run(() => {
                 return svc.GetTdsRemitance(custName, premise, unit,fromUnit,toUnit, lot);
             });
+            remittanceList = remittanceList.OrderBy(x => x.UnitNo).ToList();
             remitanceGrid.ItemsSource = remittanceList;
             TotalRecordsLbl.Content = remittanceList.Count;
             var totalTds = remittanceList.Sum(x => x.TdsAmount);
@@ -448,6 +520,7 @@ namespace AutoFill
             var remittanceList = await Task.Run(() => {
                 return svc.GetTdsPaidList(custName, premise, unit,fromUnit,toUnit, lot, remiittanceStatusID);
             });
+            remittanceList = remittanceList.OrderBy(x => x.UnitNo).ToList();
             tdsRemitanceList =new ObservableCollection<TracesModel>(remittanceList);
            
             //TracesGrid.ItemsSource = remittanceList;
@@ -465,6 +538,7 @@ namespace AutoFill
             //var toUnit = tracesToUnitNoTxt.Text;
 
             var remittanceList = svc.GetTdsPaidList(custName, premise, unit, fromUnit, toUnit, lot, remittanceStatusID);
+            remittanceList = remittanceList.OrderBy(x => x.UnitNo).ToList();
             tdsRemitanceList = new ObservableCollection<TracesModel>(remittanceList);
             // Reload filter
             this.Dispatcher.Invoke((Action)(() =>
@@ -794,6 +868,13 @@ namespace AutoFill
             return true;
         }
 
-        
+        private void bankddl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var combo = (ComboBox)(sender);
+            if (combo.SelectedValue != null)
+            {
+                selectedBank = combo.SelectedValue.ToString();
+            }
+        }
     }
 }

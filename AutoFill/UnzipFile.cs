@@ -96,6 +96,66 @@ namespace AutoFill
             return challanDet;
         }
 
+        public Dictionary<string, string> getChallanDetails_Hdfc(string filePath, string sellerPan)
+        {
+            //var downloadPath = Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders", "{374DE290-123F-4565-9164-39C4925E467B}", String.Empty).ToString();
+            //string[] filePaths = Directory.GetFiles(downloadPath, "051030816112211522_1668577647137.pdf");
+            //filePath = filePaths[0];
+
+            Dictionary<string, string> challanDet = new Dictionary<string, string>();
+            //PDFParser pdfParser = new PDFParser();
+            //PdfReader reader = new PdfReader(@filePath);
+            //var text = new PDFParser().ExtractTextFromPDFBytes(reader.GetPageContent(1)).Trim().ToString();
+            string text;
+            using (var stream = File.OpenRead(filePath))
+            using (UglyToad.PdfPig.PdfDocument document = UglyToad.PdfPig.PdfDocument.Open(stream))
+            {
+                var page = document.GetPage(1);
+                text = string.Join(" ", page.GetWords());
+            }
+
+            Console.WriteLine(text);
+            var serialNo = GetWordAfterMatch(text, "ChallanSerialNo");
+            Console.WriteLine("Challan Serial NO :" + serialNo);
+            //var paninDoc = GetWordAfterMatch(text, "PAN:");
+            //if (pan != paninDoc.ToString())
+            //    return challanDet;
+            challanDet.Add("serialNo", serialNo.ToString());
+
+            var name = GetWordAfterMatch(text, "oftheAssessee");
+            challanDet.Add("name", name.ToString());
+            //var itns = GetWordAfterMatch(text, "Challan No./ITNS");
+            //Console.WriteLine("ITNS :" + itns);
+            var tenderDate = GetDate(text, "ofReceipt");
+            challanDet.Add("tenderDate", tenderDate.ToString());
+            var challamAmount = GetWordAfterMatch(text, "TOTAL");
+            challanDet.Add("challanAmount", challamAmount.ToString());
+            // var PAN = "BUZPP5880P"; //todo pass the pan number
+            // pan = "BBFPK5517D";
+            var tds = GetWordAfterMatch(text, sellerPan);
+            Console.WriteLine("tds conf NO :" + tds);
+            challanDet.Add("acknowledge", tds.ToString());
+            Console.ReadLine();
+
+            var incomeTax = GetWordAfterMatch(text, "BasicTax");
+            challanDet.Add("incomeTax", incomeTax.ToString());
+            var interest = GetWordAfterMatch(text, "Interest");
+            challanDet.Add("interest", interest.ToString());
+            var fee = GetWordAfterMatch(text, "Fee");
+            challanDet.Add("fee", fee.ToString());
+            return challanDet;
+        }
+
+        private object GetDate(string text, string word)
+        {
+            var pattern = string.Format(@"\b\w*" + word + @"\s\w*(/)\w+(/)\w+\b");
+            string match = Regex.Match(text, @pattern).Groups[0].Value;
+            string[] words = match.Split(' ');
+            string wordAfter = words[words.Length - 1];
+
+            return wordAfter;
+        }
+
         private object GetName(string text, string word) {
             var pattern = string.Format(@"\b\w*" + word + @"\w*\s+[^0-9]*");
             string match = Regex.Match(text, @pattern).Groups[0].Value;          
@@ -109,6 +169,16 @@ namespace AutoFill
         {
 
             var pattern = string.Format(@"\b\w*" + word + @"\w*\s+\w+\b");
+            string match = Regex.Match(text, @pattern).Groups[0].Value;
+            string[] words = match.Split(' ');
+            string wordAfter = words[words.Length - 1];
+
+            return wordAfter;
+        }
+        private object GetAmountAfterMatch(string text, string word)
+        {
+
+            var pattern = string.Format(@"\b\w*" + word + @"\w*\s+\W+\b");
             string match = Regex.Match(text, @pattern).Groups[0].Value;
             string[] words = match.Split(' ');
             string wordAfter = words[words.Length - 1];

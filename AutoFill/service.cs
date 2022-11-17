@@ -16,9 +16,9 @@ namespace AutoFill
         {
             client = new HttpClient();
 
-          //  client.BaseAddress = new Uri("http://leansyshost-002-site1.itempurl.com/api/");  // prestige Live
+            client.BaseAddress = new Uri("http://leansyshost-002-site1.itempurl.com/api/");  // prestige Live
 
-             client.BaseAddress = new Uri("https://localhost:44301/api/");
+         //   client.BaseAddress = new Uri("https://localhost:44301/api/");
 
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -55,6 +55,19 @@ namespace AutoFill
                 remitance = response.Content.ReadAsAsync<IList<TdsRemittanceDto>>().Result;
             }
             return remitance;
+        }
+
+        public string GetSellerPanByTransId(int clientPaymentTransactionID) {
+            string pan = null;
+            HttpResponseMessage response = new HttpResponseMessage();
+
+            response = client.GetAsync("TdsRemittance/getSellerPan" + clientPaymentTransactionID).Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                pan = response.Content.ReadAsAsync<string>().Result;
+            }
+            return pan;
         }
 
         public TdsRemittanceDto GetTdsRemitanceById(int clientPaymentTransactionID)
@@ -370,6 +383,12 @@ namespace AutoFill
     {
         public int RemittanceStatusID { get; set; }
         public string RemittanceStatusText { get; set; }
+
+    }
+    public class BankList
+    {
+        public int BankID { get; set; }
+        public string BankName { get; set; }
 
     }
     public class CustomerPropertyFileDto
