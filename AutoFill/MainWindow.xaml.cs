@@ -67,11 +67,11 @@ namespace AutoFill
             accountddl.DisplayMemberPath = "UserName";
             accountddl.SelectedValuePath = "AccountId";
 
-            List<BankList> banks =new List<BankList>() { new BankList() {BankID=1,BankName="ICICI" }, new BankList() { BankID = 2, BankName = "HDFC" } };
-            bankddl.ItemsSource = banks;
-            bankddl.DisplayMemberPath = "BankName";
-            bankddl.SelectedValuePath = "BankName";
-            bankddl.SelectedIndex = 0;
+            //List<BankList> banks =new List<BankList>() { new BankList() {BankID=1,BankName="ICICI" }, new BankList() { BankID = 2, BankName = "HDFC" } };
+            //bankddl.ItemsSource = banks;
+            //bankddl.DisplayMemberPath = "BankName";
+            //bankddl.SelectedValuePath = "BankName";
+            //bankddl.SelectedIndex = 0;
         }
 
         private void LoadRemitance() {
@@ -720,6 +720,7 @@ namespace AutoFill
                 selectedAccount = Convert.ToInt32(combo.SelectedValue);
 
                 var acct = accountList.Where(x => x.AccountId == Convert.ToInt32(accountddl.SelectedValue)).FirstOrDefault();
+                selectedBank = acct.BankName;
                 bankLogin = acct;
             }
         }
@@ -875,6 +876,27 @@ namespace AutoFill
             {
                 selectedBank = combo.SelectedValue.ToString();
             }
+        }
+
+        private void ResetOtp_Click(object sender, RoutedEventArgs e)
+        {
+            if (bankLogin == null)
+            {
+                MessageBox.Show("Please select account.");
+                return;
+            }
+
+            if (bankLogin.LaneNo == null)
+            {
+                MessageBox.Show("Lane No is not available for this account");
+                return;
+            }
+
+          var status=  svc.DeleteOTP(bankLogin.LaneNo.Value);
+            if(status)
+                MessageBox.Show("OTP reset is done");
+            else
+                MessageBox.Show("OTP reset is failed");
         }
     }
 }
