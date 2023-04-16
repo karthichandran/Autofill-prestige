@@ -23,7 +23,15 @@
             <Label  x:Name="Header" Height="40" Content="Repro Services" VerticalAlignment="Top" Margin="20" FontSize="20" Foreground="#1757bf" FontWeight="Bold" />
 
         </StackPanel>
-        <StackPanel Grid.Row="1" Orientation="Horizontal"  HorizontalAlignment="Right" >
+        <Grid  Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition  Width="400" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0"  HorizontalAlignment="Right">
+                <Label  Name="lbl_runingUnit" Padding="0 10 0 0" FontSize="20" Foreground="#ed62f0" FontWeight="ExtraBold" ></Label>
+            </StackPanel>           
+        <StackPanel Grid.Column="1" Orientation="Horizontal"  HorizontalAlignment="Right" >
             <Label  x:Name="account" Height="35" Margin="0 10 0 0" Content="User Account :" VerticalAlignment="Top"  FontSize="18" Foreground="#E65100" FontWeight="Bold" />
             <ComboBox x:Name="accountddl"   Height="35" FontSize="17" Padding="10 5 0 0" Margin="0 0 30 0"  MinWidth="400" SelectionChanged="accountddl_SelectionChanged"/>
             <Button x:Name="ResetOtp" Grid.Column="0"  Content="Reset OTP" Margin="0,0,20,0" Padding="10 0 10 0" Click="ResetOtp_Click" FontSize="17" FontWeight="Bold" Background="#039be5" Height="40" HorizontalAlignment="Stretch" VerticalAlignment="Center" BorderBrush="#FFC5C2C2" >
@@ -40,6 +48,7 @@
             <!--<Label  x:Name="bank" Height="35" Margin="0 10 0 0" Content="Bank :" VerticalAlignment="Top"  FontSize="18" Foreground="#E65100" FontWeight="Bold" />
             <ComboBox x:Name="bankddl"   Height="35" FontSize="17" Padding="10 5 0 0" Margin="0 0 30 0"  MinWidth="400" SelectionChanged="bankddl_SelectionChanged"/>-->
         </StackPanel>
+        </Grid>
         <TabControl Grid.Row="2" >
             <TabItem>
                 <TabItem.Header>

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -107,9 +108,13 @@ namespace AutoFill
                 MessageBox.Show("Please select User Account", "alert", MessageBoxButton.OK);
                 return false; 
             }
-           
-         
-           var status= FillForm26Q.AutoFillForm26QB(autoFillDto,tds, tdsInterest, lateFee, bankLogin, clientPaymentTransactionID.ToString(),selectedBank);
+
+            var status = false;
+            if (bankLogin.BankName == "HDFC")
+                status = FillForm26Q.AutoFillForm26QB(autoFillDto, tds, tdsInterest, lateFee, bankLogin, clientPaymentTransactionID.ToString());
+            else
+                status = FillForm26QB_ICICI.AutoFillForm26QB(autoFillDto, tds, tdsInterest, lateFee, bankLogin, clientPaymentTransactionID.ToString());
+
             return status;
         }
 
@@ -184,6 +189,8 @@ namespace AutoFill
             {
                 foreach (var item in remittanceList)
                 {
+                     Dispatcher.BeginInvoke( new Action(() =>lbl_runingUnit.Content = item.CustomerName + "  -  " + item.UnitNo + "  -  " + item.TdsAmount),System.Windows.Threading.DispatcherPriority.Send);
+                   
                     var challanAmount = item.TdsAmount + item.TdsInterest + item.LateFee;
                     var id = item.ClientPaymentTransactionID;
                     AutoFillDto autoFillDto = svc.GetAutoFillData(id);
@@ -192,20 +199,26 @@ namespace AutoFill
                         continue;
                     }
 
-                    var status = FillForm26Q.AutoFillForm26QB_NoMsg(autoFillDto, item.TdsAmount.ToString(), item.TdsInterest.ToString(), item.LateFee.ToString(), bankLogin, id.ToString(),selectedBank);
+                    var status = false;
+                    if (bankLogin.BankName == "HDFC")
+                        status = FillForm26Q.AutoFillForm26QB_NoMsg(autoFillDto, item.TdsAmount.ToString(), item.TdsInterest.ToString(), item.LateFee.ToString(), bankLogin, id.ToString());
+                    else
+                        status = FillForm26QB_ICICI.AutoFillForm26QB_NoMsg(autoFillDto, item.TdsAmount.ToString(), item.TdsInterest.ToString(), item.LateFee.ToString(), bankLogin, id.ToString());
+
                     if (!status)
                     {
                         if (failedPayments == "")
                         {
                             failedPayments = item.UnitNo + " - " + item.CustomerName;
                         }
-                        else {
-                            failedPayments = failedPayments+ " , " + item.UnitNo + " - " + item.CustomerName;
+                        else
+                        {
+                            failedPayments = failedPayments + " , " + item.UnitNo + " - " + item.CustomerName;
                         }
                         continue;
                     }
 
-                    autoUploadChallan_NoMsg(id, challanAmount,selectedBank,item.SellerPAN);                   
+                    autoUploadChallan_NoMsg(id, challanAmount, selectedBank, item.SellerPAN);
                 }
 
 
@@ -218,6 +231,7 @@ namespace AutoFill
                 }
                 
                 MessageBox.Show("Batch process completed.");
+                Dispatcher.BeginInvoke(new Action(() => lbl_runingUnit.Content = ""), System.Windows.Threading.DispatcherPriority.Send);
             }, TaskScheduler.FromCurrentSynchronizationContext());
 
             

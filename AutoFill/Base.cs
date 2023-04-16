@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -11,6 +12,7 @@ using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Edge;
 using OpenQA.Selenium.IE;
 using OpenQA.Selenium.Support.UI;
+using SeleniumExtras.WaitHelpers;
 using WebDriverManager.DriverConfigs.Impl;
 
 namespace AutoFill
@@ -36,7 +38,51 @@ namespace AutoFill
                 }
             });
         }
-        
+
+        //protected static void WaitForReadyEportal(IWebDriver webDriver)
+        //{
+        //    //TimeSpan timeSpan = TimeSpan.FromSeconds(120);
+        //    //WebDriverWait wait = new WebDriverWait(webDriver, timeSpan);
+        //    //wait.Until(driver => {
+        //    //    bool isAjaxFinished = (bool)((IJavaScriptExecutor)driver).
+        //    //        ExecuteScript("return jQuery.active == 0");
+        //    //    try
+        //    //    {
+        //    //        var loader = driver.FindElement(By.ClassName("loader-mask")).GetAttribute("style");
+        //    //        Console.WriteLine(loader);
+        //    //        return loader.Split(':')[1] == " none;";
+        //    //    }
+        //    //    catch
+        //    //    {
+        //    //        return isAjaxFinished;
+        //    //    }
+        //    //});
+        //    //IWebElement element = new WebDriverWait(webDriver, TimeSpan.FromSeconds(120)).Until(ExpectedConditions.ElementIsVisible(By.Id("ymPluginDivContainerInitial")));
+        //    var element1 = new WebDriverWait(webDriver, TimeSpan.FromSeconds(120)).Until<bool>((IWebDriver driver)=>driver.FindElement(By.Id("ymPluginDivContainerInitial")).Displayed);
+        //}
+
+        protected static IWebElement GetElementById(IWebDriver webDriver, string id) {
+            WaitFor(webDriver, 2);
+            IWebElement element = new WebDriverWait(webDriver, TimeSpan.FromSeconds(60)).Until(ExpectedConditions.ElementIsVisible(By.Id(id)));
+            return element;
+        }
+        protected static IWebElement GetElementByClass(IWebDriver webDriver, string cls)
+        {
+            WaitFor(webDriver, 2);
+            IWebElement element = new WebDriverWait(webDriver, TimeSpan.FromSeconds(60)).Until(ExpectedConditions.ElementIsVisible(By.ClassName(cls)));
+            return element;
+        }
+        protected static IWebElement GetElementByXpath(IWebDriver webDriver, string path)
+        {
+            WaitFor(webDriver, 2);
+            IWebElement element = new WebDriverWait(webDriver, TimeSpan.FromSeconds(60)).Until(ExpectedConditions.ElementIsVisible(By.XPath(path)));
+            return element;
+        }
+
+        protected static void ScrollToBottom(IWebDriver webDriver) {
+            IJavaScriptExecutor js = (IJavaScriptExecutor)webDriver;
+            js.ExecuteScript("window.scrollTo(0, 0)");
+        }
         protected static void WaitFor(IWebDriver webDriver, int inSeconds = 0)
         {
             // webDriver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(inSeconds);
