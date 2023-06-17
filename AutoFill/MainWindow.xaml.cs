@@ -140,7 +140,8 @@ namespace AutoFill
                     return;
 
                 // auto upload
-                autoUploadChallan(model.ClientPaymentTransactionID, challanAmount,selectedBank,model.SellerPAN);
+                // autoUploadChallan(model.ClientPaymentTransactionID, challanAmount,selectedBank,model.SellerPAN);
+                UploadDebitAdvice(model.ClientPaymentTransactionID);
 
                 // Reload filter
                 this.Dispatcher.Invoke((Action)(() =>
@@ -218,7 +219,8 @@ namespace AutoFill
                         continue;
                     }
 
-                    autoUploadChallan_NoMsg(id, challanAmount, selectedBank, item.SellerPAN);
+                    //autoUploadChallan_NoMsg(id, challanAmount, selectedBank, item.SellerPAN);
+                    UploadDebitAdvice(id);
                 }
 
 
@@ -248,6 +250,104 @@ namespace AutoFill
             RemittanceSearchFilter();
         }
 
+        private void UploadDebitAdvice(int transID)
+        {
+            var remittance = svc.GetRemitanceByTransID(transID);
+            var downloadPath = Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders", "{374DE290-123F-4565-9164-39C4925E467B}", String.Empty).ToString();
+
+            //var fileName = "AHUPB2786K_23040400148910ICIC_DTAX_04042023_TaxPayer.pdf";
+            var fileName = remittance.CustomerPAN + "_*.pdf";
+            //var fileName = "23040800002375ICIC_ChallanReceipt.pdf";
+
+            var directory = new DirectoryInfo(downloadPath);
+            var myFile = directory.GetFiles(fileName).OrderByDescending(f => f.LastWriteTime).ToList();
+
+            if (myFile.Count == 0)
+                return;
+
+            var filename = myFile[0].FullName;
+
+            var unzipFile = new UnzipFile();
+            Dictionary<string, string> debitAdvice;
+
+            debitAdvice = unzipFile.getDebitAdviceDetails(filename);
+
+            var formData = new MultipartFormDataContent();
+            var fileContent = new ByteArrayContent(File.ReadAllBytes(filename));
+            var fileType = System.IO.Path.GetExtension(filename);
+            var contentType = svc.GetContentType(fileType);
+            fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
+            var name = System.IO.Path.GetFileName(filename);
+            formData.Add(fileContent, "file", name);
+            int result = svc.SaveDebitAdviceFile(formData);
+
+            if (result != 0)
+            {
+                DebitAdviceDto dto = new DebitAdviceDto
+                {
+                    ClientPaymentTransactionID = transID,
+                    CinNo = debitAdvice["cinNo"],
+                    PaymentDate = DateTime.ParseExact(debitAdvice["paymentDate"], "dd/MM/yyyy", null),
+                    BlobId = result
+                };
+                var debitAdviceId = svc.SaveDebitAdvice(dto);
+            }
+        }
+
+        private void UploadChallan(int transID, decimal challanAmt)
+        {
+            var debitAdv = svc.GetDebitAdviceByClienttransId(transID);
+            var remittance = svc.GetRemitanceByTransID(transID);
+            var downloadPath = Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders", "{374DE290-123F-4565-9164-39C4925E467B}", String.Empty).ToString();
+
+
+
+            var fileName = debitAdv.CinNo + "_ChallanReceipt.pdf";
+            // var fileName = "23040800002375ICIC_ChallanReceipt.pdf";
+
+            var directory = new DirectoryInfo(downloadPath);
+            var myFile = directory.GetFiles(fileName).OrderByDescending(f => f.LastWriteTime).ToList();
+
+            if (myFile.Count == 0)
+                return;
+
+            var filename = myFile[0].FullName;
+
+            var unzipFile = new UnzipFile();
+            Dictionary<string, string> challanDet;
+
+            challanDet = unzipFile.getChallanDetails_da(filename);
+
+            if (remittance.ClientPaymentTransactionID == 0)
+                remittance.ClientPaymentTransactionID = transID;
+
+            remittance.ChallanAmount = challanAmt;
+            remittance.ChallanID = challanDet["serialNo"];
+            remittance.ChallanAckNo = challanDet["acknowledge"];
+            remittance.ChallanDate = DateTime.ParseExact(challanDet["tenderDate"], "dd/MM/yyyy", null);
+            remittance.RemittanceStatusID = 2;
+
+            remittance.ChallanIncomeTaxAmount = Convert.ToDecimal(challanDet["amount"]);
+            remittance.ChallanInterestAmount = 0;
+            remittance.ChallanFeeAmount = 0;
+            remittance.ChallanCustomerName = challanDet["name"].ToString();
+
+
+
+            var formData = new MultipartFormDataContent();
+            var fileContent = new ByteArrayContent(File.ReadAllBytes(filename));
+            var fileType = System.IO.Path.GetExtension(filename);
+            var contentType = svc.GetContentType(fileType);
+            fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
+            var name = System.IO.Path.GetFileName(filename);
+            formData.Add(fileContent, "file", name);
+
+            int result = svc.SaveRemittance(remittance);
+
+            if (result != 0)
+                svc.UploadFile(formData, result.ToString(), 7);
+
+        }
 
         private async void autoUploadChallan(int transID, decimal challanAmt,string bankName, string sellerPan)
         {
@@ -911,6 +1011,60 @@ namespace AutoFill
                 MessageBox.Show("OTP reset is done");
             else
                 MessageBox.Show("OTP reset is failed");
+        }
+
+        private async void challan_download_Click(object sender, RoutedEventArgs e)
+        {
+            var remittanceList = (List<TdsRemittanceDto>)remitanceGrid.ItemsSource;
+            remittanceList = remittanceList.Where(x => x.IsSelected == true).ToList();
+
+            if (remittanceList.Count == 0)
+                return;
+
+            progressbar1.Visibility = Visibility.Visible;
+            foreach (var item in remittanceList)
+            {
+                await Task.Run(() =>
+                {
+                    // download chellan
+                    var challanAmount = item.TdsAmount + item.TdsInterest + item.LateFee;
+
+                    var id = item.ClientPaymentTransactionID;
+                    AutoFillDto autoFillDto = svc.GetAutoFillData(id);
+                    var status = FillForm26QB_ICICI.DownloadChallanFromTaxPortal(autoFillDto, id);
+
+                    if (!status)
+                        return;
+
+                    // auto challan upload
+                    UploadChallan(item.ClientPaymentTransactionID, challanAmount);
+
+                    // Reload filter
+
+                });
+            }
+
+            this.Dispatcher.Invoke((Action)(() =>
+            {
+                var custName = customerNameTxt.Text;
+                var premise = PremisesTxt.Text;
+                var unit = unitNoTxt.Text;
+                var lot = lotNoTxt.Text;
+                var fromUnit = fromUnitNoTxt.Text;
+                var toUnit = toUnitNoTxt.Text;
+                var remitanceList = svc.GetTdsRemitance(custName, premise, unit, fromUnit, toUnit, lot);
+                remitanceList = remitanceList.OrderBy(x => x.UnitNo).ToList();
+                remitanceGrid.ItemsSource = remitanceList;
+                TotalRecordsLbl.Content = remitanceList.Count;
+                var totalTds = remitanceList.Sum(x => x.TdsAmount);
+                TotalTDSLbl.Content = totalTds;
+
+            }));
+
+            progressbar1.Visibility = Visibility.Hidden;
+            if (remittanceList.Count > 0)
+                MessageBox.Show(" Challan Download is processed");
+
         }
     }
 }

@@ -16,10 +16,12 @@ namespace AutoFill
 {
     public class UnzipFile
     {
-        public UnzipFile() {
+        public UnzipFile()
+        {
         }
 
-        public string extractFile(string fileName, string pwd) {
+        public string extractFile(string fileName, string pwd)
+        {
             // using Microsoft.Win32;
 
             var downloadPath = Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders", "{374DE290-123F-4565-9164-39C4925E467B}", String.Empty).ToString();
@@ -48,10 +50,68 @@ namespace AutoFill
             //MessageBoxResult result = MessageBox.Show(String.Format("Form 16B with file name {0} downloaded successfully", fileName), "Confirmation",
             //                                         MessageBoxButton.OK, MessageBoxImage.Information,
             //                                         MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
-            return @downloadPath+'\\'+ fileName + ".pdf";
+            return @downloadPath + '\\' + fileName + ".pdf";
         }
 
-        public Dictionary<string, string> getChallanDetails(string filePath, string pan) {
+        public Dictionary<string, string> getDebitAdviceDetails(string filePath)
+        {
+            Dictionary<string, string> challanDet = new Dictionary<string, string>();
+
+            string text;
+            using (var stream = File.OpenRead(filePath))
+            using (UglyToad.PdfPig.PdfDocument document = UglyToad.PdfPig.PdfDocument.Open(stream))
+            {
+                var page = document.GetPage(1);
+                text = string.Join(" ", page.GetWords());
+            }
+
+            Console.WriteLine(text);
+            var cinNo = GetWordAfterMatch(text, "CIN No");
+            Console.WriteLine("Challan Serial NO :" + cinNo);
+            var paymentDate = GetDate(text, "Time");
+
+            challanDet.Add("cinNo", cinNo.ToString());
+            challanDet.Add("paymentDate", paymentDate.ToString());
+
+            return challanDet;
+        }
+
+        public Dictionary<string, string> getChallanDetails_da(string filePath)
+        {
+            Dictionary<string, string> challanDet = new Dictionary<string, string>();
+
+            string text;
+            using (var stream = File.OpenRead(filePath))
+            using (UglyToad.PdfPig.PdfDocument document = UglyToad.PdfPig.PdfDocument.Open(stream))
+            {
+                var page = document.GetPage(1);
+                text = string.Join(" ", page.GetWords());
+            }
+
+            Console.WriteLine(text);
+            var ackowledgeNo = GetWordAfterMatch(text, "Acknowledgement Number :");
+            Console.WriteLine("Acknowledgement :" + ackowledgeNo);
+
+            var serialNo = GetWordAfterMatch(text, "Challan No :");
+            Console.WriteLine("Challan Serial NO :" + serialNo);
+
+            var name = GetFullName(text);
+
+            var tenderDate = GetDate(text, "Tender Date :");
+
+            var incomeTax = GetAmount(text);
+
+            challanDet.Add("acknowledge", ackowledgeNo.ToString());
+            challanDet.Add("serialNo", serialNo.ToString());
+            challanDet.Add("name", name.ToString());
+            challanDet.Add("tenderDate", tenderDate.ToString());
+            challanDet.Add("amount", incomeTax.ToString());
+
+            return challanDet;
+        }
+
+        public Dictionary<string, string> getChallanDetails(string filePath, string pan)
+        {
             Dictionary<string, string> challanDet = new Dictionary<string, string>();
             //PDFParser pdfParser = new PDFParser();
             //PdfReader reader = new PdfReader(@filePath);
@@ -72,7 +132,7 @@ namespace AutoFill
                 return challanDet;
             challanDet.Add("serialNo", serialNo.ToString());
 
-            var name = GetName(text,"Full Name :");
+            var name = GetName(text, "Full Name :");
             challanDet.Add("name", name.ToString());
             //var itns = GetWordAfterMatch(text, "Challan No./ITNS");
             //Console.WriteLine("ITNS :" + itns);
@@ -98,10 +158,6 @@ namespace AutoFill
 
         public Dictionary<string, string> getChallanDetails_Hdfc(string filePath, string sellerPan)
         {
-            //var downloadPath = Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders", "{374DE290-123F-4565-9164-39C4925E467B}", String.Empty).ToString();
-            //string[] filePaths = Directory.GetFiles(downloadPath, "051030816112211522_1668577647137.pdf");
-            //filePath = filePaths[0];
-
             Dictionary<string, string> challanDet = new Dictionary<string, string>();
             //PDFParser pdfParser = new PDFParser();
             //PdfReader reader = new PdfReader(@filePath);
@@ -156,29 +212,30 @@ namespace AutoFill
             return wordAfter;
         }
 
-        private object GetName(string text, string word) {
+        private object GetName(string text, string word)
+        {
             var pattern = string.Format(@"\b\w*" + word + @"\w*\s+[^0-9]*");
-            string match = Regex.Match(text, @pattern).Groups[0].Value;          
+            string match = Regex.Match(text, @pattern).Groups[0].Value;
             string[] words = match.Split(':');
             string wordAfter = words[words.Length - 1];
 
             return wordAfter;
+        }
+        private object GetFullName(string text)
+        {
+            string ward = Regex.Match(text, "Name : (.*)Assessment").Groups[1].Value;
+            return ward;
+        }
+        private object GetAmount(string text)
+        {
+            string ward = Regex.Match(text, "₹(.*)Amount").Groups[1].Value;
+            return ward;
         }
 
         private object GetWordAfterMatch(string text, string word)
         {
 
             var pattern = string.Format(@"\b\w*" + word + @"\w*\s+\w+\b");
-            string match = Regex.Match(text, @pattern).Groups[0].Value;
-            string[] words = match.Split(' ');
-            string wordAfter = words[words.Length - 1];
-
-            return wordAfter;
-        }
-        private object GetAmountAfterMatch(string text, string word)
-        {
-
-            var pattern = string.Format(@"\b\w*" + word + @"\w*\s+\W+\b");
             string match = Regex.Match(text, @pattern).Groups[0].Value;
             string[] words = match.Split(' ');
             string wordAfter = words[words.Length - 1];
@@ -206,7 +263,7 @@ namespace AutoFill
             return wordAfter;
         }
 
-        public Dictionary<string, string> GetForm16bDetailsFromPDF(string filePath,string pan)
+        public Dictionary<string, string> GetForm16bDetailsFromPDF(string filePath, string pan)
         {
             // pan = "AMSPA9519Q";
             Dictionary<string, string> form16bDet = new Dictionary<string, string>();
@@ -249,7 +306,7 @@ namespace AutoFill
 
             var namePattern = string.Format(@"\b\w*" + "Full Name:" + @"(.*)");
             string nameMatch = Regex.Match(text, @namePattern).Groups[1].Value;
-            string[] nameArray = nameMatch.Split(new string[]{ "Page" }, StringSplitOptions.None);            
+            string[] nameArray = nameMatch.Split(new string[] { "Page" }, StringSplitOptions.None);
             form16bDet.Add("name", nameArray[0].Trim());
 
             //var amountPattern = string.Format(@"\b\w*sum of Rs.\w*\s+\w*.\w*");
@@ -265,11 +322,11 @@ namespace AutoFill
             string amount = amountArry[amountArry.Length - 1];
             form16bDet.Add("amount", amount);
 
-           
+
 
             return form16bDet;
         }
 
-       
+
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -17,7 +16,7 @@ using WebDriverManager.DriverConfigs.Impl;
 
 namespace AutoFill
 {
-   public class Base
+    public class Base
     {
         protected static void WaitForReady(IWebDriver webDriver)
         {
@@ -38,30 +37,8 @@ namespace AutoFill
                 }
             });
         }
-
-        //protected static void WaitForReadyEportal(IWebDriver webDriver)
-        //{
-        //    //TimeSpan timeSpan = TimeSpan.FromSeconds(120);
-        //    //WebDriverWait wait = new WebDriverWait(webDriver, timeSpan);
-        //    //wait.Until(driver => {
-        //    //    bool isAjaxFinished = (bool)((IJavaScriptExecutor)driver).
-        //    //        ExecuteScript("return jQuery.active == 0");
-        //    //    try
-        //    //    {
-        //    //        var loader = driver.FindElement(By.ClassName("loader-mask")).GetAttribute("style");
-        //    //        Console.WriteLine(loader);
-        //    //        return loader.Split(':')[1] == " none;";
-        //    //    }
-        //    //    catch
-        //    //    {
-        //    //        return isAjaxFinished;
-        //    //    }
-        //    //});
-        //    //IWebElement element = new WebDriverWait(webDriver, TimeSpan.FromSeconds(120)).Until(ExpectedConditions.ElementIsVisible(By.Id("ymPluginDivContainerInitial")));
-        //    var element1 = new WebDriverWait(webDriver, TimeSpan.FromSeconds(120)).Until<bool>((IWebDriver driver)=>driver.FindElement(By.Id("ymPluginDivContainerInitial")).Displayed);
-        //}
-
-        protected static IWebElement GetElementById(IWebDriver webDriver, string id) {
+        protected static IWebElement GetElementById(IWebDriver webDriver, string id)
+        {
             WaitFor(webDriver, 2);
             IWebElement element = new WebDriverWait(webDriver, TimeSpan.FromSeconds(60)).Until(ExpectedConditions.ElementIsVisible(By.Id(id)));
             return element;
@@ -79,7 +56,8 @@ namespace AutoFill
             return element;
         }
 
-        protected static void ScrollToBottom(IWebDriver webDriver) {
+        protected static void ScrollToBottom(IWebDriver webDriver)
+        {
             IJavaScriptExecutor js = (IJavaScriptExecutor)webDriver;
             js.ExecuteScript("window.scrollTo(0, 0)");
         }
@@ -112,28 +90,30 @@ namespace AutoFill
 
                 //var driver = new ChromeDriver(AppDomain.CurrentDomain.BaseDirectory, options);
 
-               // new WebDriverManager.DriverManager().SetUpDriver(new ChromeConfig());
-                ChromeDriver driver = new ChromeDriver( options);
+                // new WebDriverManager.DriverManager().SetUpDriver(new ChromeConfig());
+                ChromeDriver driver = new ChromeDriver(options);
 
-               // ChromeDriver driver = new ChromeDriver(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), options);
+                // ChromeDriver driver = new ChromeDriver(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), options);
 
                 return driver;
                 //var ieDriver = GetIEDriver();
                 //return ieDriver;
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 throw ex;
             }
         }
 
-        protected static IWebDriver GetIEDriver() {
+        protected static IWebDriver GetIEDriver()
+        {
 
-           // InternetExplorerDriver ie = new InternetExplorerDriver();
+            // InternetExplorerDriver ie = new InternetExplorerDriver();
             EdgeDriver edge = new EdgeDriver();
             return edge;
         }
 
-        protected static string ReadCaptcha(IWebDriver webDriver,string captchaId)
+        protected static string ReadCaptcha(IWebDriver webDriver, string captchaId)
         {
 
             var jsExecuter = (IJavaScriptExecutor)webDriver;
@@ -175,7 +155,7 @@ namespace AutoFill
             }
             else
             {
-                captcha = api.GetTaskSolution().Text.ToUpper();
+                captcha = api.GetTaskSolution().Text;
                 // DebugHelper.Out("Result: " + api.GetTaskSolution().Text, DebugHelper.Type.Success);
             }
             return captcha;

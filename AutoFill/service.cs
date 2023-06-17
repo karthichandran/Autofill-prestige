@@ -16,9 +16,9 @@ namespace AutoFill
         {
             client = new HttpClient();
 
-            client.BaseAddress = new Uri("http://leansyshost-002-site1.itempurl.com/api/");  // prestige Live
+            client.BaseAddress = new Uri("https://prestigetdsapi.reproservices.in/api/");  // prestige Live
 
-           //client.BaseAddress = new Uri("https://localhost:44301/api/");
+            //  client.BaseAddress = new Uri("https://localhost:44301/api/");
 
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -224,6 +224,51 @@ namespace AutoFill
             return 0;
         }
 
+        public int SaveDebitAdviceFile(MultipartFormDataContent file)
+        {
+            HttpResponseMessage response = new HttpResponseMessage();
+
+            response = client.PostAsync("DebitAdvice/uploadFile", file).Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                return response.Content.ReadAsAsync<int>().Result;
+
+            }
+            return 0;
+        }
+
+        public int SaveDebitAdvice(DebitAdviceDto debitAdviceDto)
+        {
+            HttpResponseMessage response = new HttpResponseMessage();
+
+            CreateDebitAdviceCommand debitAdviceObj = new CreateDebitAdviceCommand();
+            debitAdviceObj.debitAdviceDto = debitAdviceDto;
+            response = client.PostAsJsonAsync("DebitAdvice", debitAdviceObj).Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                return response.Content.ReadAsAsync<int>().Result;
+
+            }
+            return 0;
+        }
+
+        public DebitAdviceDto GetDebitAdviceByClienttransId(int transId)
+        {
+            HttpResponseMessage response = new HttpResponseMessage();
+
+            CreateDebitAdviceCommand debitAdviceObj = new CreateDebitAdviceCommand();
+            response = client.GetAsync("DebitAdvice/getById/" + transId).Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                return response.Content.ReadAsAsync<DebitAdviceDto>().Result;
+
+            }
+
+            return new DebitAdviceDto();
+        }
         public string UploadFile(MultipartFormDataContent file, string remittanceId, int category) {
             HttpResponseMessage response = new HttpResponseMessage();
             response = client.PostAsync("traces/" + remittanceId + "/" + category, file).Result;
@@ -522,6 +567,7 @@ namespace AutoFill
         public bool IncorrectDOB { get; set; }
 
         public bool IsDebitAdvice { get; set; }
+        public bool Show26qb { get; set; }
     }
 
     public class TracesModel: TdsRemittanceDto{
@@ -683,5 +729,18 @@ namespace AutoFill
         public string Message { get; set; }
         public int? Error_code { get; set; }
         public int Opt { get; set; }
+    }
+    public class CreateDebitAdviceCommand
+    {
+        public DebitAdviceDto debitAdviceDto { get; set; }
+    }
+
+    public class DebitAdviceDto
+    {
+        public int DebitAdviceID { get; set; }
+        public int ClientPaymentTransactionID { get; set; }
+        public string CinNo { get; set; }
+        public DateTime? PaymentDate { get; set; }
+        public int? BlobId { get; set; }
     }
 }
