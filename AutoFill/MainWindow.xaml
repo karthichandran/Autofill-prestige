@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AutoFill"
         mc:Ignorable="d"
-        Title="Repro Services" Height="450" Width="800"
+        Title="Prestige Projects" Height="450" Width="800"
          WindowState="Maximized">
     <Grid>
         <Grid.ColumnDefinitions>
@@ -20,7 +20,7 @@
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Orientation="Horizontal"   >
             <Image x:Name="image1" Margin="10,10,0,10" VerticalAlignment="Top" Source="/assets/repro_logo.png" Width="60" Height="60" HorizontalAlignment="Left" />
-            <Label  x:Name="Header" Height="40" Content="Repro Services" VerticalAlignment="Top" Margin="20" FontSize="20" Foreground="#1757bf" FontWeight="Bold" />
+            <Label  x:Name="Header" Height="40" Content="Prestige Projects" VerticalAlignment="Top" Margin="20" FontSize="20" Foreground="#1757bf" FontWeight="Bold" />
 
         </StackPanel>
         <Grid  Grid.Row="1">
@@ -67,7 +67,8 @@
                         <RowDefinition Height="50" />
                         <RowDefinition Height="60"/>
                         <RowDefinition Height="50"/>
-                        <RowDefinition Height="50"/>                       
+                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="40"/>
                         <RowDefinition/>
                         <RowDefinition Height="50"/>
                     </Grid.RowDefinitions>
@@ -140,6 +141,7 @@
                                 <ColumnDefinition  />
                                 <ColumnDefinition />
                                 <ColumnDefinition />
+                                <ColumnDefinition />
                             </Grid.ColumnDefinitions>
                             <Button x:Name="Search" Grid.Column="0"  Content="Search" Margin="0,0,10,0" Click="Search_Click" FontSize="17" FontWeight="Bold" Background="#039be5" Height="40" HorizontalAlignment="Stretch" VerticalAlignment="Center" BorderBrush="#FFC5C2C2" >
                         <Button.Foreground>
@@ -172,10 +174,30 @@
                                 </Style>
                             </Button.Resources>
                         </Button>
+                            
                     </Grid>
+                    <StackPanel Grid.Row="2" Grid.Column="3" HorizontalAlignment="Left">
+                        <Button x:Name="ExportToExcel" Content="Export"  Width="90"  Margin="0,5,0,0" Click="ExportToExcel_OnClick" FontSize="17" FontWeight="Bold" Background="#039be5" Foreground="White" VerticalAlignment="Center" Height="40" BorderBrush="#FFE2E1E1">
+                        <Button.Resources>
+                            <Style TargetType="{x:Type Border}">
+                                <Setter Property="CornerRadius" Value="3"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                    </StackPanel>
                     <ProgressBar Grid.Row="3" Grid.ColumnSpan="4"  x:Name = "progressbar1" Margin = "20,0,0,0" Height = "30"  Width="300"
                   IsIndeterminate = "True" />
-                    <DataGrid  Grid.Row="4" RowBackground="#ccffff" AlternatingRowBackground="#fff" CanUserAddRows="False"  Foreground="#898b8c" HorizontalAlignment="Center" Margin="20,30,20,40" Width="auto" x:Name="remitanceGrid" VerticalAlignment="Top"  AutoGenerateColumns="False" Grid.ColumnSpan="4" BorderBrush="#FFDFE1E2">
+                    <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal">
+                            <ComboBox Name="RemittnaceRemarkDDl" Height="30" Width="200" Margin="10,0,0,0" ></ComboBox>
+                            <Button Name="SaveRemittanceRemak" Content="Save" Click="SaveRemittanceRemak_OnClick" Height="30" Width="80" Margin="20,0,0,0"></Button>
+                        </StackPanel>
+                        <StackPanel  Orientation="Horizontal" Margin="20 10 0 0">
+                            <RadioButton Name="Resident" GroupName="resident" Click="ResidentRadioBtn_OnClick"  Margin="20 0 0 0">Resident</RadioButton>
+                            <RadioButton Name="NonResident" GroupName="resident" Click="ResidentRadioBtn_OnClick" Margin="20 0 0 0">Non Resident</RadioButton>
+                        </StackPanel>
+                    </StackPanel>
+                    <DataGrid  Grid.Row="5" RowBackground="#ccffff" AlternatingRowBackground="#fff" CanUserAddRows="False"  Foreground="#898b8c" HorizontalAlignment="Center" Margin="10,2,10,10" Width="auto" x:Name="remitanceGrid" VerticalAlignment="Top"  AutoGenerateColumns="False" Grid.ColumnSpan="4" BorderBrush="#FFDFE1E2">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn >
                                 <DataGridTemplateColumn.Header>
@@ -193,6 +215,24 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
+                            <DataGridTextColumn  Header="Trans ID" Binding="{Binding ClientPaymentTransactionID}"  >
+                                <DataGridColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="Height" Value="40"/>
+                                        <Setter Property="FontSize" Value="16"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="Foreground" Value="#828385"/>
+                                    </Style>
+                                </DataGridColumn.HeaderStyle>
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="10,0,0,0" />
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="Foreground" Value="DarkRed"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                             <DataGridTextColumn  Header="Unit No" Binding="{Binding UnitNo}"  >
                                 <DataGridColumn.HeaderStyle>
                                     <Style TargetType="DataGridColumnHeader">
@@ -373,7 +413,7 @@
                             <DataGridTemplateColumn>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Margin="5,5,5,5" Padding="3,3,3,3" Click="proceedForm" Content="Proceed to Form26QB" Background="#f52f7b" Foreground="White" FontSize="14" FontWeight="Bold">
+                                        <Button Margin="5,5,5,5" Padding="3,3,3,3" Click="proceedForm" Content="Proceed to Form26QB" Background="#f52f7b" Foreground="White" FontSize="14" FontWeight="Bold"  IsEnabled="{Binding Show26qb,Mode=TwoWay}">
                                             <Button.Resources>
                                                 <Style TargetType="{x:Type Border}">
                                                     <Setter Property="CornerRadius" Value="3"/>
@@ -414,21 +454,28 @@
                             </DataGridTemplateColumn>-->
                         </DataGrid.Columns>
                     </DataGrid>
-                    <Grid Grid.Row="5" VerticalAlignment="Top" Grid.ColumnSpan="4">
+                    <Grid Grid.Row="6" VerticalAlignment="Top" Grid.ColumnSpan="4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition />
-                            <ColumnDefinition Width="130"/>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="50"/>
-                            <ColumnDefinition Width="110"/>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition/>
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                            <ColumnDefinition />
                         </Grid.ColumnDefinitions>
-                        <Label Grid.Column="1" Content="Total Records  :" FontSize="17" FontWeight="Bold" Foreground="#FF9800"></Label>
-                        <Label x:Name="TotalRecordsLbl" Grid.Column="2" FontSize="17" FontWeight="Bold" Foreground="#E65100" Margin="20 0 0 0"></Label>
-                        <Label Grid.Column="3"></Label>
-                        <Label Grid.Column="4" Content=" Total TDS  :" FontSize="17" FontWeight="Bold" Foreground="#FF9800" ></Label>
-                        <Label x:Name="TotalTDSLbl" Grid.Column="5" FontSize="17" FontWeight="Bold" Foreground="#E65100" Margin="20 0 0 0"></Label>
+                        <StackPanel Orientation="Horizontal" Grid.Column="0">
+                            <Label Content="Total Records  :" FontSize="17" FontWeight="Bold" Foreground="#FF9800"></Label>
+                            <Label x:Name="TotalRecordsLbl"  FontSize="17" FontWeight="Bold" Foreground="#E65100" Margin="20 0 0 0"></Label>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Grid.ColumnSpan="4" Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Label  Content=" Total TDS  :" FontSize="17" FontWeight="Bold" Foreground="#FF9800" ></Label>
+                            <Label x:Name="TotalTDSLbl" FontSize="17" FontWeight="Bold" Foreground="#E65100" Margin="20 0 0 0" MinWidth="100"></Label>
+                            <Label  Content=" TDS Interest  :" FontSize="17" FontWeight="Bold" Foreground="#FF9800" ></Label>
+                            <Label x:Name="TotalTdsInterestLbl" FontSize="17" FontWeight="Bold" Foreground="#E65100" Margin="20 0 0 0" MinWidth="100"></Label>
+                            <Label  Content="Late Fee  :" FontSize="17" FontWeight="Bold" Foreground="#FF9800" ></Label>
+                            <Label x:Name="TotalLateFeeLbl" FontSize="17" FontWeight="Bold" Foreground="#E65100" Margin="20 0 0 0"></Label>
+                        </StackPanel>
+                        
+                       
                     </Grid>
                     <!--<Popup Name="popup1" PlacementTarget="{Binding ElementName=FilterGrid}" AllowsTransparency = "True" PopupAnimation = "Slide"
     Placement="Center" Height="100" Width="300">
@@ -464,7 +511,9 @@
                         <RowDefinition Height="50"/>
                         <RowDefinition Height="50"/>
                         <RowDefinition Height="50"/>
+                        <RowDefinition Height="40"/>
                         <RowDefinition/>
+                        <RowDefinition Height="40"/>
                     </Grid.RowDefinitions>                   
 
                     <Label  x:Name="tracescustomerName" Height="30" Content="Customer Name" Grid.Row="0" Grid.Column="0" Margin="10,10,10,0 " HorizontalAlignment="Left" FontSize="14" Foreground="#FF8D8E95" FontWeight="Bold" />
@@ -539,6 +588,7 @@
                             <ColumnDefinition  />
                             <ColumnDefinition />
                             <ColumnDefinition />
+                            <ColumnDefinition />
                         </Grid.ColumnDefinitions>
                         <Button x:Name="TracesSearch"  Content="Search"  Grid.Column="0" Margin="0,0,10,0" Click="TracesSearch_Click" FontSize="17" FontWeight="Bold" Background="#039be5" Height="40" HorizontalAlignment="Stretch" VerticalAlignment="Center" BorderBrush="#FFC5C2C2" >
                             <Button.Foreground>
@@ -571,11 +621,23 @@
                                 </Style>
                             </Button.Resources>
                         </Button>
+                        <Button x:Name="ExportToExcelTraces" Grid.Column="4" Content="Export"  
+                                Margin="0,5,0,0" Click="ExportToExcelTraces_OnClick" FontSize="17" FontWeight="Bold" Background="#039be5" Foreground="White" VerticalAlignment="Center" Height="40" BorderBrush="#FFE2E1E1">
+                            <Button.Resources>
+                                <Style TargetType="{x:Type Border}">
+                                    <Setter Property="CornerRadius" Value="3"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
                     </Grid>
                   
                     <ProgressBar Grid.Row="4" Grid.ColumnSpan="4"  x:Name = "TracesProgressbar" Margin = "20,0,0,0" Height = "30"  Width="300"
                   IsIndeterminate = "True" />
-                    <DataGrid  Grid.Row="5" RowBackground="#ccffff" AlternatingRowBackground="#fff" CanUserAddRows="False"  Foreground="#898b8c" HorizontalAlignment="Center" Margin="20,30,20,40" Width="auto" x:Name="TracesGrid" VerticalAlignment="Top"  AutoGenerateColumns="False" Grid.ColumnSpan="4" BorderBrush="#FFDFE1E2">
+                    <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="4" Orientation="Horizontal" >
+                        <ComboBox Name="TracesRemarkDDl" Height="30" Width="200" Margin="10,0,0,0" ></ComboBox>
+                        <Button Name="SaveTracesRemark" Content="Save" Click="SaveTracesRemark_OnClick" Height="30" Width="80" Margin="20,0,0,0"></Button>
+                    </StackPanel>
+                    <DataGrid  Grid.Row="6" RowBackground="#ccffff" AlternatingRowBackground="#fff" CanUserAddRows="False"  Foreground="#898b8c" HorizontalAlignment="Center"  Margin="10,2,10,10" Width="auto" x:Name="TracesGrid" VerticalAlignment="Top"  AutoGenerateColumns="False" Grid.ColumnSpan="4" BorderBrush="#FFDFE1E2">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn >
                                 <DataGridTemplateColumn.Header>
@@ -673,9 +735,6 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                           
-                                                  
-                            
                            
                             <DataGridTextColumn Header="Challan Amount" Binding="{Binding ChallanAmount}">
                                 <DataGridColumn.HeaderStyle>
@@ -843,7 +902,7 @@
                                                 </Style>
                                             </Button.Resources>
                                         </Button>-->
-                                        <Button Margin="5,5,5,5" Padding="3,3,3,3" Click="SendMail" Content=" Mail " Background="#f2ad22" Foreground="White" FontSize="14" FontWeight="Bold" >
+                                        <Button Margin="5,5,5,5" Padding="3,3,3,3" Click="SendMail" Content=" Mail " Background="#f2ad22" Foreground="White" FontSize="14" FontWeight="Bold" IsEnabled="{Binding MailEnabled,Mode=TwoWay}">
                                             <Button.Resources>
                                                 <Style TargetType="{x:Type Border}">
                                                     <Setter Property="CornerRadius" Value="3"/>
@@ -856,8 +915,17 @@
                             </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
+                    <Grid Grid.Row="7" VerticalAlignment="Top" Grid.ColumnSpan="4" Margin="0 0 0 10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="130"/>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <Label Grid.Column="1" Content="Total Records  :" FontSize="17" FontWeight="Bold" Foreground="#FF9800"></Label>
+                        <Label x:Name="TotalTracesRecordsLbl" Grid.Column="2" FontSize="17" FontWeight="Bold" Foreground="#E65100" Margin="20 0 0 0"></Label>
+                    </Grid>
 
-                   
                 </Grid>
             </TabItem>
 

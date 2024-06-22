@@ -52,9 +52,13 @@ namespace AutoFill
                 var result = svc.SaveRemittance(remittance);
                 if (result != 0)
                 {
-                    var bloblId = svc.UploadFile(formData, remittance.RemittanceID.ToString(), 6);
+                    // Note : we are pausing this as sri ram requested
+                   // var bloblId = svc.UploadFile(formData, remittance.RemittanceID.ToString(), 6);
+                   
+                   // Note : its upload just file info like filename
+                    var bloblId = svc.UploadFileInfoOnly(formData, remittance.RemittanceID.ToString(), 6);
                     return true;
-                    // MessageBox.Show("Request details are saved successfully");
+                   
                 }
                 else
                     return false;
