@@ -156,6 +156,13 @@ namespace AutoFill
             lateFee = model.LateFee.ToString();
             // MethodThatWillCallComObject(AutoFillForm26Q,model.ClientPaymentTransactionID);
 
+            var deductionDate = model.DateOfDeduction.AddMonths(2);
+            var dueDate = new DateTime(deductionDate.Year, deductionDate.Month, 1);
+            if (dueDate <= DateTime.Now)
+            {
+                MessageBox.Show("The payment has a late fee and interest. Please go to client payment to correct it", "alert", MessageBoxButton.OK);
+            }
+
             progressbar1.Visibility = Visibility.Visible;
          await  Task.Factory.StartNew(async() =>
             {
@@ -226,7 +233,14 @@ namespace AutoFill
                         continue;
 
                     Dispatcher.BeginInvoke( new Action(() =>lbl_runingUnit.Content = item.CustomerName + "  -  " + item.UnitNo + "  -  " + item.TdsAmount),System.Windows.Threading.DispatcherPriority.Send);
-                   
+
+                    var deductionDate = item.DateOfDeduction.AddMonths(2);
+                    var dueDate = new DateTime(deductionDate.Year, deductionDate.Month, 1);
+                    if (dueDate <= DateTime.Now)
+                    {
+                        MessageBox.Show("The payment has a late fee and interest. Please go to client payment to correct it", "alert", MessageBoxButton.OK);
+                    }
+
                     var challanAmount = item.TdsAmount + item.TdsInterest + item.LateFee;
                     var id = item.ClientPaymentTransactionID;
                     AutoFillDto autoFillDto = svc.GetAutoFillData(id);

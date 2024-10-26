@@ -19,7 +19,7 @@ namespace AutoFill
            // client.BaseAddress = new Uri("https://prestigetdsapi.reproservices.in/api/");  // prestige Live
              client.BaseAddress = new Uri("http://leansyshost-002-site7.atempurl.com/api/");  // Prestige 2 Live
 
-           //   client.BaseAddress = new Uri("https://localhost:44301/api/");
+          //  client.BaseAddress = new Uri("https://localhost:44301/api/");
 
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -608,7 +608,7 @@ namespace AutoFill
         public decimal? ChallanInterestAmount { get; set; }
         public decimal? ChallanFeeAmount { get; set; }
         public string ChallanCustomerName { get; set; }
-        public virtual int UnitNo { get; set; }
+        public virtual string UnitNo { get; set; }
         public virtual string CustomerName { get; set; }
         public virtual string Premises { get; set; }
         public virtual int LotNo { get; set; }
@@ -624,7 +624,7 @@ namespace AutoFill
         public int ClientPaymentID { get; set; }
         public Guid OwnershipID { get; set; }
         public string PropertyPremises { get; set; }
-        public int UnitNo { get; set; }
+        public string UnitNo { get; set; }
         public bool TdsCollectedBySeller { get; set; }
         public Guid InstallmentID { get; set; }
         public DateTime? RevisedDateOfPayment { get; set; }

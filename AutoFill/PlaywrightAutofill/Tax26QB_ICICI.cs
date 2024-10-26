@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using AngleSharp.Io;
 using Microsoft.Playwright;
 using Microsoft.Win32;
 using OpenQA.Selenium.DevTools.V85.Page;
@@ -193,8 +194,14 @@ namespace AutoFill.PlaywrightAutofill
            if (await loginHereBtn.CountAsync()>0)
            {
                await loginHereBtn.ClickAsync();
-           }
-           TransactionLog = "Exit after Login";
+               await page.WaitForTimeoutAsync(2000);
+            }
+           var itrBackBtn=await page.WaitForSelectorAsync(".previousIcon", new PageWaitForSelectorOptions() { Timeout = 60000 });
+            //var itrBackBtn = page.Locator(".previousIcon");
+           if(itrBackBtn != null && await itrBackBtn.IsEnabledAsync())
+               await itrBackBtn.ClickAsync();
+
+            TransactionLog = "Exit after Login";
             await page.WaitForURLAsync("**/dashboard",new PageWaitForURLOptions(){Timeout = 90000});
         }
 
@@ -251,7 +258,7 @@ namespace AutoFill.PlaywrightAutofill
             //.mat-select-panel> mat-option>span
 
             TransactionLog = "Failed selecting no of rows";
-            var noOfRowElm = page.Locator("#mat-select-6");
+            var noOfRowElm = page.Locator("#mat-select-7"); //6
             await noOfRowElm.ClickAsync();
             var optList = page.Locator(".mat-select-panel> mat-option>span");
             if (await optList.CountAsync()>0)
@@ -311,18 +318,18 @@ namespace AutoFill.PlaywrightAutofill
             await securityRiskBtn.ClickAsync();
 
             TransactionLog = "Failed at residential selection";
-            var residentStatus = page.Locator("xpath=//*[@id='mat-radio-2']/label");
+            var residentStatus = page.Locator("xpath=//*[@id='mat-radio-5']/label"); //2
             await residentStatus.ClickAsync();
 
             TransactionLog = "Failed at One / more buyer selection";
             if (!eportal.IsCoOwners)
             {
-                var oneBuyer = page.Locator("xpath=//*[@id='mat-radio-6']/label");
+                var oneBuyer = page.Locator("xpath=//*[@id='mat-radio-9']/label"); //6
                await oneBuyer.ClickAsync();
             }
             else
             {
-                var moreBuyer = page.Locator("xpath=//*[@id='mat-radio-5']/label");
+                var moreBuyer = page.Locator("xpath=//*[@id='mat-radio-8']/label"); //5
                await moreBuyer.ClickAsync();
             }
 
@@ -335,37 +342,39 @@ namespace AutoFill.PlaywrightAutofill
             var panSeller = page.Locator("xpath=//input[@formcontrolname='pan']").Nth(1);
            // var panSeller = page.Locator("#mat-input-8");
             await panSeller.FillAsync(eportal.SellerPan);
-            await page.WaitForTimeoutAsync(1000);
+            await page.WaitForTimeoutAsync(3000);//slowdown 1000
 
             TransactionLog = "Failed at confirm PAN of seller";
             //var panSellerConfirm = page.Locator("#mat-input-31");
             var panSellerConfirm = page.Locator("xpath=//input[@formcontrolname='confirmPan']");
             await panSellerConfirm.FillAsync(eportal.SellerPan);
-            await page.WaitForTimeoutAsync(1000);
+            await page.WaitForTimeoutAsync(3000); //slowdown 1000
 
             TransactionLog = "Failed at flat address of seller tab";
             //var flat = page.Locator("#mat-input-10");
             var flat = page.Locator("xpath=//input[@formcontrolname='flatAddress']").Nth(1);
             await flat.FillAsync(eportal.SellerFlat);
-            await page.WaitForTimeoutAsync(500);
+            await page.WaitForTimeoutAsync(3000);//slowdown 500
 
             TransactionLog = "Failed at road address  of seller tab";
             //var road = page.Locator("#mat-input-11");
             var road = page.Locator("xpath=//input[@formcontrolname='streetAddress']").Nth(1);
             await road.FillAsync(eportal.SellerRoad);
-            await page.WaitForTimeoutAsync(500);
+            await page.WaitForTimeoutAsync(3000);//slowdown 500
 
             TransactionLog = "Failed at pin code  of seller tab";
             // var pinCode =await page.WaitForSelectorAsync("#mat-input-33");
-            var inx = isResident ? 1 : 0;
-            var pinCode = await page.WaitForSelectorAsync("xpath=//input[@formcontrolname='pincode']>> nth=" + inx);
+           // var inx = isResident ? 1 : 0;
+            var inx =  0;
+           //var pinCode = await page.WaitForSelectorAsync("xpath=//input[@formcontrolname='pincode']>> nth=" + inx);
+            var pinCode = await page.WaitForSelectorAsync("#mat-input-33");
             await pinCode.FillAsync(eportal.SellerPinCode.Trim());
-            await page.WaitForTimeoutAsync(1000);
-            
+            await page.WaitForTimeoutAsync(3000);//slowdown 1000
+
             TransactionLog = "Failed at mobile number";
             var mobileNo = page.Locator("#phone").Nth(1);
             await mobileNo.FillAsync(eportal.SellerMobile);
-            await page.WaitForTimeoutAsync(1000);
+            await page.WaitForTimeoutAsync(3000);//slowdown 1000
 
             TransactionLog = "Failed at email";
             //var email = page.Locator("#mat-input-13");
@@ -408,8 +417,10 @@ namespace AutoFill.PlaywrightAutofill
 
             TransactionLog = "Failed at property pin";
             //var propPin = page.Locator("#mat-input-18");
-            inx = isResident ? 2 : 1;
-            var propPin = await page.WaitForSelectorAsync("xpath=//input[@formcontrolname='pincode']>> nth=" + inx);
+            //inx = isResident ? 2 : 1;
+            //inx =  1;
+           // var propPin = await page.WaitForSelectorAsync("xpath=//input[@formcontrolname='pincode']>> nth=" + inx);
+             var propPin = await page.WaitForSelectorAsync("#mat-input-16");
             await propPin.FillAsync(eportal.PropPinCode);
 
             TransactionLog = "Failed at date of agreement";
@@ -503,10 +514,14 @@ namespace AutoFill.PlaywrightAutofill
             var terms = page.Locator(".mat-checkbox-layout");
             await terms.ClickAsync();
 
-           var submitToBank = page.Locator("xpath=//*[@id='SubmitToBank']/div/div/div[3]/button");
+           //var submitToBank = page.Locator("xpath=//*[@id='submitButton']/div/div/div[3]/button");
+           var submitToBank = page.Locator("#submitButton");
+
             await submitToBank.ClickAsync();
+            var loadElm = page.Locator("#outerTab");
 
             TransactionLog = "Failed at Corporate User";
+            var waitElm =await  page.WaitForSelectorAsync("table >tbody > tr > td > table > tbody > tr ",new PageWaitForSelectorOptions(){Timeout = 180000});
             var crnRow = page.Locator("table >tbody > tr > td > table > tbody > tr ");
              var crn = await crnRow.Nth(3).Locator("td").Nth(1).InnerTextAsync();//CIB_11X_PROCEED
             var corporateUser = page.Locator("#CIB_11X_PROCEED");
