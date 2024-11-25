@@ -48,7 +48,13 @@ namespace AutoFill.PlaywrightAutofill
              var browser = await playwright.Chromium.ConnectOverCDPAsync("http://localhost:9223");
             //var browser =
             //    await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = false, SlowMo = 400, Timeout = 90000,Channel = "chrome"});
-            page = await browser.NewPageAsync();
+            var context =await browser.NewContextAsync(new BrowserNewContextOptions
+            {
+                IsMobile = false,
+                Permissions = Array.Empty<string>()
+            });
+            page = await context.NewPageAsync();
+            //page = await browser.NewPageAsync();
             //await page.RouteAsync("**/automation-validator.min.js", async route =>await route.AbortAsync());
             await page.WaitForTimeoutAsync(1000);
         }
@@ -320,6 +326,11 @@ namespace AutoFill.PlaywrightAutofill
             TransactionLog = "Failed at residential selection";
             var residentStatus = page.Locator("xpath=//*[@id='mat-radio-5']/label"); //2
             await residentStatus.ClickAsync();
+            await page.WaitForTimeoutAsync(3000);//slowdown 1000
+
+            //wait for state filled
+            var stateElm=  page.Locator("#mat-input-6");
+            var stateFilled = await WaitForInputToBeFilledAsync(stateElm, 30000);
 
             TransactionLog = "Failed at One / more buyer selection";
             if (!eportal.IsCoOwners)
@@ -337,18 +348,22 @@ namespace AutoFill.PlaywrightAutofill
             TransactionLog = "Failed after filling buyers details";
             var continueBtn = page.Locator(".nextIcon").First;
             await continueBtn.ClickAsync();
+             await page.WaitForTimeoutAsync(3000);//slowdown 1000
 
             TransactionLog = "Failed at PAN of seller";
             var panSeller = page.Locator("xpath=//input[@formcontrolname='pan']").Nth(1);
-           // var panSeller = page.Locator("#mat-input-8");
-            await panSeller.FillAsync(eportal.SellerPan);
-            await page.WaitForTimeoutAsync(3000);//slowdown 1000
+            await panSeller.ClickAsync();
+            await panSeller.TypeAsync(eportal.SellerPan.Trim(),new LocatorTypeOptions(){Delay = 100});
+            // await page.WaitForTimeoutAsync(5000);//slowdown 1000
 
             TransactionLog = "Failed at confirm PAN of seller";
             //var panSellerConfirm = page.Locator("#mat-input-31");
             var panSellerConfirm = page.Locator("xpath=//input[@formcontrolname='confirmPan']");
-            await panSellerConfirm.FillAsync(eportal.SellerPan);
-            await page.WaitForTimeoutAsync(3000); //slowdown 1000
+            await panSellerConfirm.TypeAsync(eportal.SellerPan.Trim(), new LocatorTypeOptions() { Delay = 100 });
+            
+            //wait for state filled
+            var naneSellerElm = page.Locator("#mat-input-9");
+            await WaitForInputToBeFilledAsync(naneSellerElm, 30000);
 
             TransactionLog = "Failed at flat address of seller tab";
             //var flat = page.Locator("#mat-input-10");
@@ -533,25 +548,25 @@ namespace AutoFill.PlaywrightAutofill
         {
             TransactionLog = "Failed at bank login";
             var userIdTxt = page.Locator("#login-step1-userid");
-            await userIdTxt.FillAsync(_bankLogin.UserName);
+            await userIdTxt.TypeAsync(_bankLogin.UserName,new LocatorTypeOptions{Delay = 500});
 
             var pwdTxt = page.Locator(".login-pwd");
             await pwdTxt.FocusAsync();
-            await pwdTxt.FillAsync(_bankLogin.UserPassword);
+            await pwdTxt.TypeAsync(_bankLogin.UserPassword, new LocatorTypeOptions { Delay = 500 });
 
             var proceedBtn = page.Locator("#VALIDATE_CREDENTIALS1");
             await proceedBtn.ClickAsync();
-
+            await page.WaitForTimeoutAsync(1000);
             if (!string.IsNullOrEmpty(transId))
             {
                 var feeTxt = page.Locator(".type_RemarksMedium");
-                await feeTxt.FillAsync(transId);
+                await feeTxt.TypeAsync(transId, new LocatorTypeOptions { Delay = 500 });
             }
 
             TransactionLog = "Failed at Grid";
             var gridAuth = page.Locator(".absmiddle").Nth(1);
             await gridAuth.ClickAsync();
-
+            await page.WaitForTimeoutAsync(1000);
             var continueBtn = page.Locator("#CONTINUE_PREVIEW");
             if (await continueBtn.CountAsync() > 0)
                 await continueBtn.First.ClickAsync();
@@ -563,6 +578,25 @@ namespace AutoFill.PlaywrightAutofill
                 await submitBtn.First.ClickAsync();
 
             await page.WaitForTimeoutAsync(1000);
+        }
+
+        public static async Task<bool> WaitForInputToBeFilledAsync(ILocator inputLocator, int timeout = 5000)
+        {
+            var startTime = DateTime.Now;
+
+            while ((DateTime.Now - startTime).TotalMilliseconds < timeout)
+            {
+                var value = await inputLocator.InputValueAsync();
+                if (!string.IsNullOrEmpty(value))
+                {
+                    Console.WriteLine("Input is filled!");
+                    return true;
+                }
+
+                await Task.Delay(100); // Polling interval
+            }
+
+            return false;
         }
 
         private async Task<bool> Download_DA(string pan)
